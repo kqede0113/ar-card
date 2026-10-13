@@ -1,47 +1,111 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>kqede AR</title><style>html,body{margin:0;height:100%;overflow:hidden}#c{width:100vw;height:100vh}
-#msg{position:fixed;left:0;right:0;bottom:16px;text-align:center;color:#fff;font:14px sans-serif;text-shadow:0 0 4px #000;z-index:10}</style>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js","mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"}}</script>
-</head><body><div id="c"></div><div id="msg">Loading…</div><script type="module">
-import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
-import {VRMLoaderPlugin,VRMUtils} from '@pixiv/three-vrm';import {MindARThree} from 'mindar-image-three';
-const msg=document.getElementById('msg');
-const ar=new MindARThree({container:document.getElementById('c'),imageTargetSrc:'./targets.mind',uiScanning:'no'});
-const {renderer,scene,camera}=ar;
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;
-// Lighting for MToon: soft ambient + key light from camera-front-above (key light follows the camera)
-scene.add(new THREE.AmbientLight(0xffffff,0.45));const key=new THREE.DirectionalLight(0xffffff,1.4);scene.add(key);scene.add(key.target);
-const anchor=ar.addAnchor(0);
-// Card layout in target units
-const CARD_CX=0, HEIGHT=1.35; // whole 100x63mm card is the target: origin = card centre, 1 unit = 100mm
-const holder=new THREE.Group();holder.position.x=CARD_CX;anchor.group.add(holder);
-// soft contact shadow
-const cv=document.createElement('canvas');cv.width=cv.height=128;const g2=cv.getContext('2d');const gr=g2.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(0,0,0,0.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g2.fillStyle=gr;g2.fillRect(0,0,128,128);
-const shadow=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.3),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false}));shadow.position.z=0.002;holder.add(shadow);
-let vrm;const l=new GLTFLoader();l.setMeshoptDecoder(MeshoptDecoder);l.register(p=>new VRMLoaderPlugin(p));
-l.load('./model_m1024.vrm',g=>{vrm=g.userData.vrm;VRMUtils.rotateVRM0(vrm);const o=vrm.scene;
- o.traverse(x=>{x.frustumCulled=false});
- const h=vrm.humanoid;h.getNormalizedBoneNode('leftUpperArm').rotation.z=-1.2;h.getNormalizedBoneNode('rightUpperArm').rotation.z=1.2;vrm.update(0);
- const box=new THREE.Box3().setFromObject(o);const s=HEIGHT/(box.max.y-box.min.y);
- const pivot=new THREE.Group();pivot.rotation.x=Math.PI/2;pivot.scale.setScalar(s);o.position.y=-box.min.y; // feet exactly on card plane
- pivot.add(o);holder.add(pivot);
- // springs simulate relative to the model, so tracking jitter/jumps don't fling the hair
- vrm.springBoneManager?.joints.forEach(j=>j.center=o);
- msg.textContent='Point the camera at the card';},p=>{if(p.total)msg.textContent='Loading '+Math.round(p.loaded/p.total*100)+'%'},e=>msg.textContent='Load error: '+e);
-anchor.onTargetFound=()=>{msg.textContent='';vrm?.springBoneManager?.reset()};anchor.onTargetLost=()=>msg.textContent='Point the camera at the card';
-const clock=new THREE.Clock();let nb=2;const v=new THREE.Vector3();
-renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();msg.textContent='Graphics memory ran out (WebGL context lost). Please reload.'});
-await ar.start();
-// MindAR uses near=10/far=100000 in target units (1 unit = 0.1mm on this card): far too little depth precision on iPhone,
-// so hair z-fights with the scalp and the shirt with the body. Fit near/far to the card distance each frame.
-const _p=new THREE.Vector3();
-const fixClip=()=>{if(!anchor.group.visible)return;_p.setFromMatrixPosition(anchor.group.matrixWorld);const d=_p.length();
- const n=Math.max(10,d*0.05),f=d*8;if(Math.abs(camera.near-n)>n*0.2||Math.abs(camera.far-f)>f*0.2){camera.near=n;camera.far=f;camera.updateProjectionMatrix()}
-};
-renderer.setAnimationLoop(()=>{fixClip();const dt=Math.min(clock.getDelta(),0.05),t=clock.elapsedTime;
- key.position.copy(camera.position).add(v.set(0,600,0));key.target.position.copy(anchor.group.position);
- if(vrm){const h=vrm.humanoid;const sp=h.getNormalizedBoneNode('spine'),ch=h.getNormalizedBoneNode('chest'),hd=h.getNormalizedBoneNode('head');
-  if(sp){sp.rotation.z=Math.sin(t*0.8)*0.03}if(ch)ch.rotation.x=Math.sin(t*2)*0.015;if(hd)hd.rotation.y=Math.sin(t*0.5)*0.1;
-  const em=vrm.expressionManager;if(em){nb-=dt;let b=0;if(nb<0.15)b=Math.sin((0.15-nb)/0.15*Math.PI);if(nb<0)nb=2+Math.random()*3;em.setValue('blink',Math.max(0,b))}
-  vrm.update(dt)}renderer.render(scene,camera)});
-</script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f2d48">
+  <meta name="description" content="DCCのアバターを好きな場所に置いて楽しむAR体験。カードやQRの読み取りは不要です。">
+  <title>DCC AR | アバターを好きな場所に</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231f2d48'/%3E%3Ctext x='32' y='43' text-anchor='middle' fill='white' font-size='28' font-family='sans-serif' font-weight='bold'%3ED%3C/text%3E%3C/svg%3E">
+  <link rel="preload" as="image" href="./avatar-ar-preview.png">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.4.0/dist/model-viewer.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="https://hark.site/s/ce784a6a-7054-47a3-b850-8b532f23cc08" aria-label="DCC学祭サイトへ戻る">
+        <span class="brand-mark" aria-hidden="true">D</span>
+        <span class="brand-copy"><strong>DCC</strong><small>FESTIVAL 2026</small></span>
+      </a>
+      <a class="back-link" href="https://hark.site/s/ce784a6a-7054-47a3-b850-8b532f23cc08">
+        <span aria-hidden="true">←</span> 学祭サイトへ
+      </a>
+    </header>
+
+    <main>
+      <section class="experience" aria-labelledby="page-title">
+        <div class="intro">
+          <div class="eyebrow"><span class="eyebrow-star" aria-hidden="true">✦</span> DCC AR EXPERIENCE <span class="eyebrow-num">01 / 01</span></div>
+          <h1 id="page-title">アバターを、<br><span>好きな場所に。</span></h1>
+          <p class="intro-lead">スマホのカメラで床を映して、置きたい場所をタップ。<br>カードもQRも使わず、目の前にアバターが現れます。</p>
+
+          <div class="intro-note">
+            <span class="note-icon" aria-hidden="true">⌖</span>
+            <span>画面の3Dモデルは指で回せます。ARは対応スマホで楽しめます。</span>
+          </div>
+
+          <div class="cta-group">
+            <button id="launch-ar" class="primary-button" type="button" disabled aria-describedby="ar-message">
+              <span class="button-icon" aria-hidden="true">⌗</span>
+              <span id="launch-label">ARを準備しています</span>
+              <span class="button-arrow" aria-hidden="true">↗</span>
+            </button>
+            <p id="ar-message" class="ar-message" role="status" aria-live="polite">3Dモデルを読み込んでいます…</p>
+          </div>
+        </div>
+
+        <div class="viewer-wrap">
+          <div class="viewer-topline"><span>AVATAR / KQEDE</span><span class="live-dot" aria-hidden="true"></span><span>3D PREVIEW</span></div>
+          <div class="viewer-stage">
+            <div class="stage-grid" aria-hidden="true"></div>
+            <div class="stage-halo" aria-hidden="true"></div>
+            <div class="stage-floor" aria-hidden="true"></div>
+            <model-viewer
+              id="avatar-viewer"
+              src="./avatar-ar.glb"
+              ios-src="./avatar-ar.usdz"
+              poster="./avatar-ar-preview.png"
+              alt="黒いコートを着たDCCのアバター"
+              loading="eager"
+              reveal="auto"
+              camera-controls
+              touch-action="pan-y"
+              camera-orbit="0deg 78deg 3.35m"
+              camera-target="0m 0.87m 0m"
+              min-camera-orbit="auto auto 1.4m"
+              max-camera-orbit="auto auto 5m"
+              field-of-view="30deg"
+              exposure="1.15"
+              shadow-intensity="0.6"
+              shadow-softness="0.8"
+              ar
+              ar-modes="webxr scene-viewer quick-look"
+              ar-placement="floor"
+              ar-scale="auto">
+              <span slot="progress-bar" class="viewer-progress" aria-hidden="true"><span id="progress-fill"></span></span>
+              <span slot="ar-button" hidden></span>
+            </model-viewer>
+            <div class="viewer-sticker" aria-hidden="true"><span>★</span> YOUR SPACE,<br>YOUR STAGE.</div>
+          </div>
+          <div class="viewer-bottomline"><span>DRAG TO ROTATE</span><span aria-hidden="true">↔</span><span>PINCH TO ZOOM</span></div>
+        </div>
+      </section>
+
+      <section class="guide" aria-labelledby="guide-title">
+        <div class="section-heading">
+          <span class="section-kicker">HOW TO PLAY</span>
+          <h2 id="guide-title">3ステップで、<br>目の前に登場。</h2>
+        </div>
+        <ol class="steps">
+          <li><span class="step-number">01</span><div class="step-art step-art-camera" aria-hidden="true">▣</div><h3>ARをひらく</h3><p>上の「ARで置く」をタップして、カメラの使用を許可します。</p></li>
+          <li><span class="step-number">02</span><div class="step-art step-art-scan" aria-hidden="true">⌖</div><h3>床を映す</h3><p>明るい場所でスマホをゆっくり動かすと、置ける場所が見つかります。</p></li>
+          <li><span class="step-number">03</span><div class="step-art step-art-place" aria-hidden="true">✦</div><h3>タップして配置</h3><p>好きな位置に立たせて、近づいたり、ぐるっと回り込んだり。</p></li>
+        </ol>
+      </section>
+
+      <aside class="support">
+        <div class="support-symbol" aria-hidden="true">?</div>
+        <div><h2>ARが開かないとき</h2><p>iPhoneはSafari、AndroidはChromeで開いてください。ARに対応していない端末でも、上の3Dプレビューは見られます。</p></div>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand"><span>DCC</span><small>DIGITAL CREATORS CLUB</small></div>
+      <div class="footer-links"><a href="https://hark.site/s/ce784a6a-7054-47a3-b850-8b532f23cc08">学祭サイト</a><a href="https://shu-dcc.net/">DCC公式サイト</a></div>
+      <p>Avatar: kqede <span aria-hidden="true">/</span> DCC FESTIVAL 2026</p>
+    </footer>
+  </div>
+</body>
+</html>
