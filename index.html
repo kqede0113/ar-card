@@ -1,0 +1,21 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kqede AR</title><style>html,body{margin:0;height:100%;overflow:hidden}#c{width:100vw;height:100vh}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js","mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"}}</script>
+</head><body><div id="c"></div><script type="module">
+import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {VRMLoaderPlugin,VRMUtils} from '@pixiv/three-vrm';import {MindARThree} from 'mindar-image-three';
+const ar=new MindARThree({container:document.getElementById('c'),imageTargetSrc:'./targets.mind'});
+const {renderer,scene,camera}=ar;scene.add(new THREE.HemisphereLight(0xffffff,0x444444,2.5));
+const anchor=ar.addAnchor(0);let vrm;
+const l=new GLTFLoader();l.setMeshoptDecoder(MeshoptDecoder);l.register(p=>new VRMLoaderPlugin(p));
+l.load('./model_mobile.vrm',g=>{vrm=g.userData.vrm;VRMUtils.rotateVRM0(vrm);
+ const o=vrm.scene;o.scale.setScalar(0.6);o.rotation.set(Math.PI/2,0,0);o.position.set(0,-0.3,0); // stand on card plane (anchor plane = XY)
+ const h=vrm.humanoid;['leftUpperArm','rightUpperArm'].forEach((b,i)=>{const n=h.getNormalizedBoneNode(b);if(n)n.rotation.z=(i?1:-1)*1.2});
+ anchor.group.add(o);});
+const clock=new THREE.Clock();let nb=2;
+await ar.start();renderer.setAnimationLoop(()=>{const dt=clock.getDelta(),t=clock.elapsedTime;
+ if(vrm){const h=vrm.humanoid;const s=h.getNormalizedBoneNode('spine'),hd=h.getNormalizedBoneNode('head');
+  if(s){s.rotation.x=Math.sin(t*2)*0.02;s.rotation.z=Math.sin(t*0.8)*0.03}if(hd)hd.rotation.y=Math.sin(t*0.5)*0.1;
+  const em=vrm.expressionManager;if(em){nb-=dt;let v=0;if(nb<0.15)v=Math.sin((0.15-nb)/0.15*Math.PI);if(nb<0)nb=2+Math.random()*3;em.setValue('blink',Math.max(0,v))}
+  vrm.update(dt)}renderer.render(scene,camera)});
+</script></body></html>
