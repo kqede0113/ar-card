@@ -14,7 +14,9 @@ The existing compressed VRM uses EXT_meshopt_compression, which Blender 4.4's gl
 2. Run Blender in background mode with export_usdc.py.
 3. Run Python with package_usdz.py.
 
-The scripts bake a static relaxed standing pose into the GLB, then package the USD scene and textures as an uncompressed, 64-byte-aligned USDZ archive. The original VRM remains untouched.
+The scripts keep the relaxed standing pose and export a single 12-second idle loop: subtle chest breathing, small shoulder/head movement, and four blinks with varied spacing (including one double blink). Feet remain fixed. The author's eye-close shape is converted to six head-relative joints, keeping at most four skin influences per vertex and avoiding morph targets that Android Scene Viewer does not support. Both GLB and USDZ contain skeletal animation. The web preview autoplays the same loop.
+
+The USD scene and textures are packaged as an uncompressed, 64-byte-aligned USDZ archive. The original VRM remains untouched. Actual native AR playback still needs verification on iPhone Safari and Android Chrome.
 
 ## Rights
 
