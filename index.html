@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>kqede AR</title><style>html,body{margin:0;height:100%;overflow:hidden;background:#000}#c{width:100vw;height:100vh}
+<title>kqede AR</title><style>html,body{margin:0;height:100%;overflow:hidden}#c{width:100vw;height:100vh}
 #msg{position:fixed;left:0;right:0;bottom:16px;text-align:center;color:#fff;font:14px sans-serif;text-shadow:0 0 4px #000;z-index:10}</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js","mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"}}</script>
 </head><body><div id="c"></div><div id="msg">Loading…</div><script type="module">
@@ -10,16 +10,16 @@ const ar=new MindARThree({container:document.getElementById('c'),imageTargetSrc:
 const {renderer,scene,camera}=ar;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;
 // Lighting for MToon: soft ambient + key light from camera-front-above (key light follows the camera)
-scene.add(new THREE.AmbientLight(0xffffff,0.6));const key=new THREE.DirectionalLight(0xffffff,2.2);scene.add(key);scene.add(key.target);
+scene.add(new THREE.AmbientLight(0xffffff,0.45));const key=new THREE.DirectionalLight(0xffffff,1.4);scene.add(key);scene.add(key.target);
 const anchor=ar.addAnchor(0);
 // Card layout in target units
-const CARD_CX=0, HEIGHT=0.7; // whole 100x63mm card is the target: origin = card centre, 1 unit = 100mm
+const CARD_CX=0, HEIGHT=1.35; // whole 100x63mm card is the target: origin = card centre, 1 unit = 100mm
 const holder=new THREE.Group();holder.position.x=CARD_CX;anchor.group.add(holder);
 // soft contact shadow
 const cv=document.createElement('canvas');cv.width=cv.height=128;const g2=cv.getContext('2d');const gr=g2.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(0,0,0,0.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g2.fillStyle=gr;g2.fillRect(0,0,128,128);
 const shadow=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.3),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false}));shadow.position.z=0.002;holder.add(shadow);
 let vrm;const l=new GLTFLoader();l.setMeshoptDecoder(MeshoptDecoder);l.register(p=>new VRMLoaderPlugin(p));
-l.load('./model_hq.vrm',g=>{vrm=g.userData.vrm;VRMUtils.rotateVRM0(vrm);const o=vrm.scene;
+l.load('./model_m1024.vrm',g=>{vrm=g.userData.vrm;VRMUtils.rotateVRM0(vrm);const o=vrm.scene;
  o.traverse(x=>{x.frustumCulled=false});
  const h=vrm.humanoid;h.getNormalizedBoneNode('leftUpperArm').rotation.z=-1.2;h.getNormalizedBoneNode('rightUpperArm').rotation.z=1.2;vrm.update(0);
  const box=new THREE.Box3().setFromObject(o);const s=HEIGHT/(box.max.y-box.min.y);
@@ -30,8 +30,15 @@ l.load('./model_hq.vrm',g=>{vrm=g.userData.vrm;VRMUtils.rotateVRM0(vrm);const o=
  msg.textContent='Point the camera at the card';},p=>{if(p.total)msg.textContent='Loading '+Math.round(p.loaded/p.total*100)+'%'},e=>msg.textContent='Load error: '+e);
 anchor.onTargetFound=()=>{msg.textContent='';vrm?.springBoneManager?.reset()};anchor.onTargetLost=()=>msg.textContent='Point the camera at the card';
 const clock=new THREE.Clock();let nb=2;const v=new THREE.Vector3();
+renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();msg.textContent='Graphics memory ran out (WebGL context lost). Please reload.'});
 await ar.start();
-renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),0.05),t=clock.elapsedTime;
+// MindAR uses near=10/far=100000 in target units (1 unit = 0.1mm on this card): far too little depth precision on iPhone,
+// so hair z-fights with the scalp and the shirt with the body. Fit near/far to the card distance each frame.
+const _p=new THREE.Vector3();
+const fixClip=()=>{if(!anchor.group.visible)return;_p.setFromMatrixPosition(anchor.group.matrixWorld);const d=_p.length();
+ const n=Math.max(10,d*0.05),f=d*8;if(Math.abs(camera.near-n)>n*0.2||Math.abs(camera.far-f)>f*0.2){camera.near=n;camera.far=f;camera.updateProjectionMatrix()}
+};
+renderer.setAnimationLoop(()=>{fixClip();const dt=Math.min(clock.getDelta(),0.05),t=clock.elapsedTime;
  key.position.copy(camera.position).add(v.set(0,600,0));key.target.position.copy(anchor.group.position);
  if(vrm){const h=vrm.humanoid;const sp=h.getNormalizedBoneNode('spine'),ch=h.getNormalizedBoneNode('chest'),hd=h.getNormalizedBoneNode('head');
   if(sp){sp.rotation.z=Math.sin(t*0.8)*0.03}if(ch)ch.rotation.x=Math.sin(t*2)*0.015;if(hd)hd.rotation.y=Math.sin(t*0.5)*0.1;
