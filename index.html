@@ -1,21 +1,40 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>kqede AR</title><style>html,body{margin:0;height:100%;overflow:hidden}#c{width:100vw;height:100vh}</style>
+<title>kqede AR</title><style>html,body{margin:0;height:100%;overflow:hidden;background:#000}#c{width:100vw;height:100vh}
+#msg{position:fixed;left:0;right:0;bottom:16px;text-align:center;color:#fff;font:14px sans-serif;text-shadow:0 0 4px #000;z-index:10}</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@pixiv/three-vrm":"https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js","mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"}}</script>
-</head><body><div id="c"></div><script type="module">
+</head><body><div id="c"></div><div id="msg">Loading…</div><script type="module">
 import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {VRMLoaderPlugin,VRMUtils} from '@pixiv/three-vrm';import {MindARThree} from 'mindar-image-three';
-const ar=new MindARThree({container:document.getElementById('c'),imageTargetSrc:'./targets.mind'});
-const {renderer,scene,camera}=ar;scene.add(new THREE.HemisphereLight(0xffffff,0x444444,2.5));
-const anchor=ar.addAnchor(0);let vrm;
-const l=new GLTFLoader();l.setMeshoptDecoder(MeshoptDecoder);l.register(p=>new VRMLoaderPlugin(p));
-l.load('./model_mobile.vrm',g=>{vrm=g.userData.vrm;VRMUtils.rotateVRM0(vrm);
- const o=vrm.scene;o.scale.setScalar(0.6);o.rotation.set(Math.PI/2,0,0);o.position.set(0,-0.3,0); // stand on card plane (anchor plane = XY)
- const h=vrm.humanoid;['leftUpperArm','rightUpperArm'].forEach((b,i)=>{const n=h.getNormalizedBoneNode(b);if(n)n.rotation.z=(i?1:-1)*1.2});
- anchor.group.add(o);});
-const clock=new THREE.Clock();let nb=2;
-await ar.start();renderer.setAnimationLoop(()=>{const dt=clock.getDelta(),t=clock.elapsedTime;
- if(vrm){const h=vrm.humanoid;const s=h.getNormalizedBoneNode('spine'),hd=h.getNormalizedBoneNode('head');
-  if(s){s.rotation.x=Math.sin(t*2)*0.02;s.rotation.z=Math.sin(t*0.8)*0.03}if(hd)hd.rotation.y=Math.sin(t*0.5)*0.1;
-  const em=vrm.expressionManager;if(em){nb-=dt;let v=0;if(nb<0.15)v=Math.sin((0.15-nb)/0.15*Math.PI);if(nb<0)nb=2+Math.random()*3;em.setValue('blink',Math.max(0,v))}
+const msg=document.getElementById('msg');
+const ar=new MindARThree({container:document.getElementById('c'),imageTargetSrc:'./targets.mind',uiScanning:'no'});
+const {renderer,scene,camera}=ar;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;
+// Lighting for MToon: soft ambient + key light from camera-front-above (key light follows the camera)
+scene.add(new THREE.AmbientLight(0xffffff,0.6));const key=new THREE.DirectionalLight(0xffffff,2.2);scene.add(key);scene.add(key.target);
+const anchor=ar.addAnchor(0);
+// Card layout in target units
+const CARD_CX=0, HEIGHT=0.7; // whole 100x63mm card is the target: origin = card centre, 1 unit = 100mm
+const holder=new THREE.Group();holder.position.x=CARD_CX;anchor.group.add(holder);
+// soft contact shadow
+const cv=document.createElement('canvas');cv.width=cv.height=128;const g2=cv.getContext('2d');const gr=g2.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(0,0,0,0.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g2.fillStyle=gr;g2.fillRect(0,0,128,128);
+const shadow=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.3),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false}));shadow.position.z=0.002;holder.add(shadow);
+let vrm;const l=new GLTFLoader();l.setMeshoptDecoder(MeshoptDecoder);l.register(p=>new VRMLoaderPlugin(p));
+l.load('./model_hq.vrm',g=>{vrm=g.userData.vrm;VRMUtils.rotateVRM0(vrm);const o=vrm.scene;
+ o.traverse(x=>{x.frustumCulled=false});
+ const h=vrm.humanoid;h.getNormalizedBoneNode('leftUpperArm').rotation.z=-1.2;h.getNormalizedBoneNode('rightUpperArm').rotation.z=1.2;vrm.update(0);
+ const box=new THREE.Box3().setFromObject(o);const s=HEIGHT/(box.max.y-box.min.y);
+ const pivot=new THREE.Group();pivot.rotation.x=Math.PI/2;pivot.scale.setScalar(s);o.position.y=-box.min.y; // feet exactly on card plane
+ pivot.add(o);holder.add(pivot);
+ // springs simulate relative to the model, so tracking jitter/jumps don't fling the hair
+ vrm.springBoneManager?.joints.forEach(j=>j.center=o);
+ msg.textContent='Point the camera at the card';},p=>{if(p.total)msg.textContent='Loading '+Math.round(p.loaded/p.total*100)+'%'},e=>msg.textContent='Load error: '+e);
+anchor.onTargetFound=()=>{msg.textContent='';vrm?.springBoneManager?.reset()};anchor.onTargetLost=()=>msg.textContent='Point the camera at the card';
+const clock=new THREE.Clock();let nb=2;const v=new THREE.Vector3();
+await ar.start();
+renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),0.05),t=clock.elapsedTime;
+ key.position.copy(camera.position).add(v.set(0,600,0));key.target.position.copy(anchor.group.position);
+ if(vrm){const h=vrm.humanoid;const sp=h.getNormalizedBoneNode('spine'),ch=h.getNormalizedBoneNode('chest'),hd=h.getNormalizedBoneNode('head');
+  if(sp){sp.rotation.z=Math.sin(t*0.8)*0.03}if(ch)ch.rotation.x=Math.sin(t*2)*0.015;if(hd)hd.rotation.y=Math.sin(t*0.5)*0.1;
+  const em=vrm.expressionManager;if(em){nb-=dt;let b=0;if(nb<0.15)b=Math.sin((0.15-nb)/0.15*Math.PI);if(nb<0)nb=2+Math.random()*3;em.setValue('blink',Math.max(0,b))}
   vrm.update(dt)}renderer.render(scene,camera)});
 </script></body></html>
