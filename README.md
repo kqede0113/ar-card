@@ -16,9 +16,9 @@ The existing compressed VRM uses EXT_meshopt_compression, which Blender 4.4's gl
 
 The scripts keep the relaxed standing pose and export a single 12-second idle loop: subtle chest breathing, small shoulder/head movement, and four blinks with varied spacing (including one double blink). Feet remain fixed. The author's eye-close shape is converted to six head-relative joints, keeping at most four skin influences per vertex and avoiding morph targets that Android Scene Viewer does not support. Both GLB and USDZ contain skeletal animation. The web preview autoplays the same loop.
 
-The arms also swing gently on independent six-second cycles, with delayed forearm and wrist movement and a slower twelve-second drift. The elbows stay slightly bent to soften the straight-down pose. The neck and head share a slow glance, gentle tilt, and smaller nod to keep the gaze relaxed.
+The arms swing gently with blended six- and twelve-second cycles and delayed forearm and wrist movement. The elbows stay slightly bent to soften the straight-down pose. The neck and head keep attention forward with small nods and tilts (combined yaw within about 1.2 degrees). This is a baked idle animation, not camera tracking.
 
-The USD scene and textures are packaged as an uncompressed, 64-byte-aligned USDZ archive. The iPhone export uses Y-up, ASCII shader names, explicit UV coordinates, portable texture paths, and the full 12-second animation range; OpenUSD's ARKit compliance checker validates the exported layer. The original VRM remains untouched. Actual native AR playback still needs verification on iPhone Safari and Android Chrome.
+The USD scene and textures are packaged as an uncompressed, 64-byte-aligned USDZ archive. The iPhone export uses Y-up, ASCII shader names, explicit UV coordinates, portable texture paths, and the full 12-second animation range; OpenUSD's ARKit compliance checker validates the exported layer. A separate emission texture reader scales the ambient color contribution to 15 percent, preserving face/clothing readability in dim lighting while retaining physically lit shading. The original VRM remains untouched. Actual native AR playback and the reported grey-material issue still need verification on iPhone Safari and Android Chrome.
 
 ## Rights
 

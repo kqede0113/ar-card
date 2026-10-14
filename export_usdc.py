@@ -39,8 +39,13 @@ for material in [m for m in bpy.data.materials if m.node_tree]:
     uv.name = "UVMap"
     uv.uv_map = "UVMap"
     material.node_tree.links.new(uv.outputs["UV"], texture.inputs["Vector"])
-    shader.inputs["Roughness"].default_value = 1
+    shader.inputs["Roughness"].default_value = 0.9
+    shader.inputs["Specular IOR Level"].default_value = 0.2
     material.node_tree.links.new(texture.outputs["Color"], shader.inputs["Base Color"])
+    # A small baked ambient contribution preserves the authored face/clothing
+    # colors in dim AR lighting, while most of the material stays physically lit.
+    material.node_tree.links.new(texture.outputs["Color"], shader.inputs["Emission Color"])
+    shader.inputs["Emission Strength"].default_value = 0.15
     if alpha_modes.get(material.name) == "MASK":
         # Preserve glTF alpha clipping. A plain opacity connection would turn
         # hair/clothing into blended surfaces and cause depth sorting artifacts.
@@ -68,12 +73,22 @@ bpy.ops.wm.usd_export(
     export_cameras=False,
 )
 # Keep portable package-relative texture paths and validate the exact USD layer.
-from pxr import Usd, UsdShade, UsdUtils
+from pxr import Gf, Sdf, Usd, UsdShade, UsdUtils
 stage = Usd.Stage.Open(str(here / "avatar-ar.usdc"))
+# Blender exports a linked emission texture without its Strength multiplier.
+# Give ambient its own texture reader so only emission is scaled, not albedo.
+for prim in list(stage.Traverse()):
+    emission = prim.GetAttribute("inputs:emissiveColor")
+    if emission and emission.GetConnections():
+        source_path = emission.GetConnections()[0].GetPrimPath()
+        ambient_path = source_path.GetParentPath().AppendChild("AmbientTexture")
+        Sdf.CopySpec(stage.GetRootLayer(), source_path, stage.GetRootLayer(), ambient_path)
+        ambient = UsdShade.Shader(stage.GetPrimAtPath(ambient_path))
+        ambient.CreateInput("scale", Sdf.ValueTypeNames.Float4).Set(Gf.Vec4f(0.15, 0.15, 0.15, 1.0))
+        emission.SetConnections([ambient_path.AppendProperty("outputs:rgb")])
 for prim in stage.Traverse():
     attr = prim.GetAttribute("inputs:file")
     if attr and attr.Get():
-        from pxr import Sdf
         path = attr.Get().path.removeprefix("./")
         assert (here / path).is_file(), path
         attr.Set(Sdf.AssetPath(path))
