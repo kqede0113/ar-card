@@ -98,7 +98,6 @@ def blink_at(t):
 for frame in range(1, scene.frame_end + 1):
     t = (frame - 1) / scene.render.fps
     breath = 0.5 - 0.5 * math.cos(2 * math.pi * t / 4)
-    sway = math.sin(2 * math.pi * t / 12)
     chest = armature.pose.bones["J_Bip_C_Chest"]
     chest.scale = (1 + 0.008 * breath, 1 + 0.003 * breath, 1 + 0.007 * breath)
     chest.keyframe_insert("scale", frame=frame)
@@ -120,9 +119,20 @@ for frame in range(1, scene.frame_end + 1):
             bone.rotation_mode = "XYZ"
             bone.rotation_euler = rotation
             bone.keyframe_insert("rotation_euler", frame=frame)
+    # A slow glance and a smaller nod soften the otherwise fixed gaze.
+    # Share the motion across neck/head, keeping the 12-second loop seamless.
+    glance = math.sin(2 * math.pi * t / 12 + 0.4)
+    nod = math.sin(2 * math.pi * t / 6 + 0.7)
+    tilt = math.sin(2 * math.pi * t / 12 - 0.6)
+    neck_pose = armature.pose.bones["J_Bip_C_Neck"]
+    neck_pose.rotation_mode = "XYZ"
+    neck_pose.rotation_euler = (0.012 * nod, 0.035 * glance, 0.016 * tilt)
+    neck_pose.keyframe_insert("rotation_euler", frame=frame)
     head_pose = armature.pose.bones["J_Bip_C_Head"]
     head_pose.rotation_mode = "XYZ"
-    head_pose.rotation_euler = (0.003 * breath, 0.005 * sway, 0.008 * sway)
+    head_pose.rotation_euler = (0.003 * breath + 0.010 * nod,
+                                0.025 * math.sin(2 * math.pi * t / 12 + 0.15),
+                                0.018 * tilt)
     head_pose.keyframe_insert("rotation_euler", frame=frame)
     blink = blink_at(t)
     for name, axis, sign in blink_bones:
