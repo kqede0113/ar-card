@@ -102,10 +102,24 @@ for frame in range(1, scene.frame_end + 1):
     chest = armature.pose.bones["J_Bip_C_Chest"]
     chest.scale = (1 + 0.008 * breath, 1 + 0.003 * breath, 1 + 0.007 * breath)
     chest.keyframe_insert("scale", frame=frame)
-    for name, angle in (("J_Bip_L_UpperArm", -1.13 - 0.002 * breath), ("J_Bip_R_UpperArm", 1.13 + 0.002 * breath)):
-        bone = armature.pose.bones[name]
-        bone.rotation_euler.z = angle
-        bone.keyframe_insert("rotation_euler", frame=frame)
+    # Let relaxed arms swing independently, with the forearms and wrists
+    # following slightly later. All periods divide the 12-second idle loop.
+    for side, mirror, phase in (("L", -1, 0.35), ("R", 1, 1.15)):
+        swing = math.sin(2 * math.pi * t / 6 + phase)
+        follow = math.sin(2 * math.pi * t / 6 + phase - 0.45)
+        drift = math.sin(2 * math.pi * t / 12 + phase)
+        rotations = (
+            ("UpperArm", (0.045 * swing, 0.012 * drift,
+                          mirror * (1.13 + 0.002 * breath + 0.018 * follow))),
+            ("LowerArm", (0.035 * follow, 0.0, mirror * (0.065 + 0.025 * drift))),
+            ("Hand", (0.055 * math.sin(2 * math.pi * t / 6 + phase - 0.8),
+                      0.018 * drift, mirror * 0.035 * follow)),
+        )
+        for part, rotation in rotations:
+            bone = armature.pose.bones[f"J_Bip_{side}_{part}"]
+            bone.rotation_mode = "XYZ"
+            bone.rotation_euler = rotation
+            bone.keyframe_insert("rotation_euler", frame=frame)
     head_pose = armature.pose.bones["J_Bip_C_Head"]
     head_pose.rotation_mode = "XYZ"
     head_pose.rotation_euler = (0.003 * breath, 0.005 * sway, 0.008 * sway)
