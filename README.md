@@ -16,7 +16,7 @@ The existing compressed VRM uses EXT_meshopt_compression, which Blender 4.4's gl
 
 The scripts keep the relaxed standing pose and export a single 12-second idle loop: subtle chest breathing, small shoulder/head movement, and four blinks with varied spacing (including one double blink). Feet remain fixed. The author's eye-close shape is converted to six head-relative joints, keeping at most four skin influences per vertex and avoiding morph targets that Android Scene Viewer does not support. Both GLB and USDZ contain skeletal animation. The web preview autoplays the same loop.
 
-The arms also swing gently on independent six-second cycles, with delayed forearm and wrist movement and a slower twelve-second drift. The elbows stay slightly bent to soften the straight-down pose.
+The arms also swing gently on independent six-second cycles, with delayed forearm and wrist movement and a slower twelve-second drift. The elbows stay slightly bent to soften the straight-down pose. The neck and head share a slow glance, gentle tilt, and smaller nod to keep the gaze relaxed.
 
 The USD scene and textures are packaged as an uncompressed, 64-byte-aligned USDZ archive. The original VRM remains untouched. Actual native AR playback still needs verification on iPhone Safari and Android Chrome.
 
