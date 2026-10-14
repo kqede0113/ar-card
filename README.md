@@ -18,7 +18,7 @@ The scripts keep the relaxed standing pose and export a single 12-second idle lo
 
 The arms also swing gently on independent six-second cycles, with delayed forearm and wrist movement and a slower twelve-second drift. The elbows stay slightly bent to soften the straight-down pose. The neck and head share a slow glance, gentle tilt, and smaller nod to keep the gaze relaxed.
 
-The USD scene and textures are packaged as an uncompressed, 64-byte-aligned USDZ archive. The original VRM remains untouched. Actual native AR playback still needs verification on iPhone Safari and Android Chrome.
+The USD scene and textures are packaged as an uncompressed, 64-byte-aligned USDZ archive. The iPhone export uses Y-up, ASCII shader names, explicit UV coordinates, portable texture paths, and the full 12-second animation range; OpenUSD's ARKit compliance checker validates the exported layer. The original VRM remains untouched. Actual native AR playback still needs verification on iPhone Safari and Android Chrome.
 
 ## Rights
 
