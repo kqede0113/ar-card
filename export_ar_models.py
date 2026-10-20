@@ -111,17 +111,32 @@ for frame in range(1, scene.frame_end + 1):
                   + 0.2 * math.sin(2 * math.pi * t / 12 + phase + 0.15))
         drift = math.sin(2 * math.pi * t / 12 + phase)
         rotations = (
-            ("UpperArm", (0.045 * swing, 0.012 * drift,
-                          mirror * (1.13 + 0.002 * breath + 0.018 * follow))),
-            ("LowerArm", (0.035 * follow, 0.0, mirror * (0.065 + 0.025 * drift))),
-            ("Hand", (0.055 * math.sin(2 * math.pi * t / 6 + phase - 0.8),
-                      0.018 * drift, mirror * 0.035 * follow)),
+            ("UpperArm", (0.030 * swing, 0.008 * drift,
+                          mirror * (1.15 + 0.004 * breath + 0.012 * follow))),
+            ("LowerArm", (0.018 * follow, mirror * (0.10 + 0.012 * follow),
+                          mirror * (0.065 + 0.012 * drift))),
+            ("Hand", (0.018 * math.sin(2 * math.pi * t / 6 + phase - 0.8),
+                      mirror * 0.025 + 0.006 * drift, mirror * 0.012 * follow)),
         )
         for part, rotation in rotations:
             bone = armature.pose.bones[f"J_Bip_{side}_{part}"]
             bone.rotation_mode = "XYZ"
             bone.rotation_euler = rotation
             bone.keyframe_insert("rotation_euler", frame=frame)
+        # Loose fingers, not a fist: stronger natural curl toward the little
+        # finger. Only a tiny slow change in grip, tied to the same arm motion.
+        for digit, amount in (("Index", 0.75), ("Middle", 0.9),
+                              ("Ring", 1.05), ("Little", 1.2)):
+            for joint, curl in ((1, 0.16), (2, 0.23), (3, 0.13)):
+                finger = armature.pose.bones[f"J_Bip_{side}_{digit}{joint}"]
+                finger.rotation_mode = "XYZ"
+                finger.rotation_euler = (0, mirror * amount * (curl + 0.008 * drift), 0)
+                finger.keyframe_insert("rotation_euler", frame=frame)
+        for joint, curl in ((2, 0.07), (3, 0.09)):
+            thumb = armature.pose.bones[f"J_Bip_{side}_Thumb{joint}"]
+            thumb.rotation_mode = "XYZ"
+            thumb.rotation_euler = (0, mirror * curl, 0)
+            thumb.keyframe_insert("rotation_euler", frame=frame)
     # Keep attention forward: small breathing-linked nods and tilts, rather
     # than looking around. This is a baked idle, not camera tracking.
     glance = math.sin(2 * math.pi * t / 12 + 0.4)
