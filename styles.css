@@ -264,3 +264,6 @@ model-viewer {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.brand-mark { overflow: hidden; }
+.brand-mark img { width: 100%; height: 100%; display: block; object-fit: cover; }
