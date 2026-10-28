@@ -14,7 +14,7 @@
 <body>
 <p>ARを起動しています…<br><a href="./">開かないときはこちら</a></p>
 <script>
-(function () {
+setTimeout(function () {
   var base = location.href.replace(/go\.html.*$/, '').replace(/[?#].*$/, '');
   if (!/\/$/.test(base)) base += '/';
   var site = base;                                   // 今のARページ
@@ -49,7 +49,7 @@
     // PC、LINEやInstagramのアプリ内ブラウザなど
     location.replace(site);
   }
-})();
+}, 1500); // 起動画面を見せる待ち時間（ms）
 </script>
 </body>
 </html>
