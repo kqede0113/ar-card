@@ -4,7 +4,8 @@
     "name": "鹿のアクセサリー置き",
     "description": "鹿のかたちのアクセサリー置き。角にアクセサリーを掛けて使えます。",
     "descriptionSource": null,
-    "price": 400
+    "price": 400,
+    "soldOut": false
   },
   {
     "id": "monkey",
