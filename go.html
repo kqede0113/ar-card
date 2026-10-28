@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DCC AR</title>
+<link rel="icon" href="./dcc-icon-64.png">
+<style>
+  html,body{margin:0;height:100%;background:#f8f2df;color:#202d47;font-family:system-ui,-apple-system,"Hiragino Sans",sans-serif}
+  body{display:flex;align-items:center;justify-content:center;text-align:center}
+  a{color:#202d47}
+</style>
+</head>
+<body>
+<p>ARを起動しています…<br><a href="./">開かないときはこちら</a></p>
+<script>
+(function () {
+  var base = location.href.replace(/go\.html.*$/, '').replace(/[?#].*$/, '');
+  if (!/\/$/.test(base)) base += '/';
+  var site = base;                                   // 今のARページ
+  var glb  = base + 'avatar-ar.glb?v=light-20261028';
+  var usdz = base + 'avatar-ar.usdz?v=light-20261028';
+  var ua = navigator.userAgent;
+
+  // 一度ここを通ったら（ARから戻ってきたら）ARページへ
+  try {
+    if (sessionStorage.getItem('dcc-ar-go')) { location.replace(site); return; }
+    sessionStorage.setItem('dcc-ar-go', '1');
+  } catch (e) {}
+
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var a = document.createElement('a');
+  var quickLook = !!(a.relList && a.relList.supports && a.relList.supports('ar'));
+
+  if (isAndroid) {
+    // Scene Viewer。使えない端末はChromeがfallbackのARページへ飛ばす
+    var intent = 'intent://arvr.google.com/scene-viewer/1.2?file=' +
+      encodeURIComponent(glb) + '&mode=ar_preferred&title=' + encodeURIComponent('kqede') +
+      '#Intent;scheme=https;package=com.google.android.googlequicksearchbox;' +
+      'action=android.intent.action.VIEW;S.browser_fallback_url=' + encodeURIComponent(site) + ';end;';
+    location.href = intent;
+    setTimeout(function () { if (!document.hidden) location.replace(site); }, 2500);
+  } else if (isIOS && quickLook) {
+    // AR Quick Look（GitHub Pagesは model/vnd.usdz+zip で返す）
+    location.href = usdz + '#allowsContentScaling=1';
+  } else {
+    // PC、LINEやInstagramのアプリ内ブラウザなど
+    location.replace(site);
+  }
+})();
+</script>
+</body>
+</html>
