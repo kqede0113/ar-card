@@ -87,5 +87,14 @@
       </section>
     </main>
   </div>
+  <script>
+    /* 学祭サイト（Hark版の枠の中）からiOSのChromeなどで来たとき：?ar=1 ならARを直接開く。
+       usdzはダウンロード扱いなのでページは残り、ARを閉じるとこのページが見える。 */
+    (function () {
+      if (!/[?&]ar=1/.test(location.search)) return;
+      if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) return;
+      location.href = new URL('./avatar-ar.usdz?v=light-20261028', location.href).href;
+    })();
+  </script>
 </body>
 </html>
