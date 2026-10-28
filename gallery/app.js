@@ -20,7 +20,7 @@ viewer.addEventListener('progress',event=>{if(event.detail.totalProgress<1)note(
 viewer.addEventListener('load',()=>{clearTimeout(loadingTimer);status.hidden=true;});
 viewer.addEventListener('error',()=>{clearTimeout(loadingTimer);note('作品を読み込めませんでした。通信を確認して、もう一度お試しください。');});
 document.getElementById('reset').addEventListener('click',reset);
-fetch('works.json').then(response=>{if(!response.ok)throw Error(response.status);return response.json();}).then(data=>{
+fetch('works.json'+new URL(import.meta.url).search).then(response=>{if(!response.ok)throw Error(response.status);return response.json();}).then(data=>{
  works=data;document.getElementById('works-count').textContent=String(works.length).padStart(2,'0')+' WORKS';
  for(const [index,work] of works.entries()){
   const button=document.createElement('button');button.type='button';button.className='work-card';button.dataset.id=work.id;button.setAttribute('aria-pressed','false');
