@@ -9,6 +9,7 @@ function reset(){viewer.cameraOrbit='25deg 72deg auto';viewer.cameraTarget='auto
 function select(id,fromCard=false){
  const index=works.findIndex(w=>w.id===id);if(index<0||id===current)return;
  const work=works[index];current=id;clearTimeout(loadingTimer);title.textContent=work.name;description.replaceChildren();
+ const price=document.getElementById('piece-price');price.hidden=!Number.isFinite(work.price);price.textContent=Number.isFinite(work.price)?work.price.toLocaleString('ja-JP')+'円':'';
  work.description.split(/\n\s*\n/).filter(Boolean).forEach(text=>{const paragraph=document.createElement('p');paragraph.textContent=text;description.append(paragraph);});
  document.getElementById('piece-number').textContent=String(index+1).padStart(2,'0')+' / '+String(works.length).padStart(2,'0');
  grid.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.id===id)));
@@ -25,7 +26,7 @@ fetch('works.json'+new URL(import.meta.url).search).then(response=>{if(!response
  for(const [index,work] of works.entries()){
   const button=document.createElement('button');button.type='button';button.className='work-card';button.dataset.id=work.id;button.setAttribute('aria-pressed','false');
   const art=document.createElement('span');art.className='work-art';const image=document.createElement('img');image.src='posters/'+work.id+'.webp';image.alt='';image.width=600;image.height=600;image.loading='lazy';art.append(image);
-  const name=document.createElement('span');name.className='work-name';const text=document.createElement('span');text.textContent=work.name;const arrow=document.createElement('span');arrow.textContent='↗';arrow.setAttribute('aria-hidden','true');name.append(text,arrow);button.append(art,name);button.addEventListener('click',()=>select(work.id,true));grid.append(button);
+  const name=document.createElement('span');name.className='work-name';const text=document.createElement('span');text.textContent=work.name;const arrow=document.createElement('span');arrow.textContent='↗';arrow.setAttribute('aria-hidden','true');name.append(text,arrow);button.append(art,name);if(Number.isFinite(work.price)){const price=document.createElement('span');price.className='work-card-price';price.textContent=work.price.toLocaleString('ja-JP')+'円';button.append(price);}button.addEventListener('click',()=>select(work.id,true));grid.append(button);
  }
  select(works.some(w=>w.id===location.hash.slice(1))?location.hash.slice(1):works[0].id);
  window.addEventListener('hashchange',()=>select(location.hash.slice(1)));
