@@ -2,7 +2,7 @@
   color-scheme: light;
   --ink: #202d47;
   --ink-soft: #526077;
-  --paper: #f8f5e9;
+  --paper: #f8f2df;
   --line: #d8d8ca;
   --mint: #85d6b5;
   --mint-deep: #48b58a;
@@ -23,10 +23,10 @@ a { color: inherit; }
   min-height: 100svh;
   overflow: clip;
   background:
-    linear-gradient(rgba(40, 58, 83, .045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(40, 58, 83, .045) 1px, transparent 1px),
+    linear-gradient(#20304708 1px, transparent 1px),
+    linear-gradient(90deg, #20304708 1px, transparent 1px),
     var(--paper);
-  background-size: 32px 32px;
+  background-size: 24px 24px;
 }
 
 .site-header, .experience, .guide, .support, .site-footer {
