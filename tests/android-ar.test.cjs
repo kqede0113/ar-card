@@ -33,6 +33,9 @@ function setup({android = true, framed = false, rejects = false} = {}) {
   assert.match(framed.elements['avatar-viewer'].attributes.src, /android-compatible-20261029/);
   assert.equal(framed.elements['launch-ar'].hidden, true);
   assert.equal(framed.elements['open-ar-page'].hidden, false);
+  assert.match(framed.elements['open-ar-page'].attributes.href, /^intent:\/\/arvr\.google\.com/);
+  assert.match(framed.elements['open-ar-page'].attributes.href, /android-compatible-20261029/);
+  assert.match(framed.elements['open-ar-page'].innerHTML, /ARで開く/);
   assert.equal(framed.activations(), 0, 'Never launch AR inside Hark iframe');
   assert.ok(framed.links.every(link => link.target === '_blank' && link.rel.includes('noopener')));
   framed.event('error');

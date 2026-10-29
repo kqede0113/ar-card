@@ -15,11 +15,17 @@ if (isAndroid) {
 let androidLaunch = "idle";
 let androidLaunchTimer;
 
-// A plain HTTPS link opens outside Hark's sandbox. Never fall back to navigating
-// the iframe: that traps the AR page and breaks its return link.
+// A native link activated by a tap opens outside Hark's sandbox. Do not use
+// window.open() plus an iframe redirect, which can launch both paths at once.
 if (framedAndroid) {
   launchButton.hidden = true;
   openInBrowser.hidden = false;
+  const modelURL = 'https://kqede0113.github.io/ar-card/avatar-ar.glb?v=android-compatible-20261029';
+  const fallbackURL = 'https://kqede0113.github.io/ar-card/?from=festival';
+  openInBrowser.setAttribute('href', 'intent://arvr.google.com/scene-viewer/1.2?file=' + encodeURIComponent(modelURL) +
+    '&mode=ar_preferred&title=DCC#Intent;scheme=https;package=com.google.android.googlequicksearchbox;' +
+    'action=android.intent.action.VIEW;S.browser_fallback_url=' + encodeURIComponent(fallbackURL) + ';end;');
+  openInBrowser.innerHTML = '<span>ARで開く</span><span class="button-arrow" aria-hidden="true">↗</span>';
   document.querySelectorAll(".site-header a").forEach(link => {
     link.target = "_blank";
     link.rel = "noopener noreferrer";
@@ -66,7 +72,7 @@ function setMessage(text, error = false) {
 
 function updateAvailability() {
   if (framedAndroid) {
-    setMessage("ARは別の画面で開きます。上のボタンを押して続けてください。");
+    setMessage("上のボタンからARを開きます。非対応の場合は、別の画面で3Dを表示します。");
     return;
   }
   if (isAndroid && androidLaunch !== "idle") return;
