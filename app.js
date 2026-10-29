@@ -7,6 +7,11 @@ const androidHelp = document.getElementById("android-help");
 const openInBrowser = document.getElementById("open-ar-page");
 const isAndroid = /Android/i.test(navigator.userAgent);
 const framedAndroid = isAndroid && window.self !== window.top;
+if (isAndroid) {
+  // Scene Viewer requires the baseline GLB; use a new URL to bypass previously
+  // cached Draco-compressed model data. iPhone's Quick Look USDZ stays unchanged.
+  viewer.setAttribute("src", "./avatar-ar.glb?v=android-compatible-20261029");
+}
 let androidLaunch = "idle";
 let androidLaunchTimer;
 

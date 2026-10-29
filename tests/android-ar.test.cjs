@@ -5,7 +5,7 @@ const path = require('node:path');
 
 function setup({android = true, framed = false, rejects = false} = {}) {
   const timers = new Map(); let sequence = 0;
-  const element = () => ({hidden: false, disabled: false, textContent: '', style: {}, listeners: {},
+  const element = () => ({hidden: false, disabled: false, textContent: '', style: {}, listeners: {}, attributes: {}, setAttribute(name, value) { this.attributes[name] = value; },
     classList: {toggle() {}}, addEventListener(name, listener) { this.listeners[name] = listener; }});
   const elements = Object.fromEntries(['avatar-viewer', 'launch-ar', 'launch-label', 'ar-message', 'progress-fill', 'android-help', 'open-ar-page'].map(id => [id, element()]));
   elements['android-help'].hidden = elements['open-ar-page'].hidden = true;
@@ -30,6 +30,7 @@ function setup({android = true, framed = false, rejects = false} = {}) {
 
 (async () => {
   const framed = setup({framed: true}); framed.load(); framed.click();
+  assert.match(framed.elements['avatar-viewer'].attributes.src, /android-compatible-20261029/);
   assert.equal(framed.elements['launch-ar'].hidden, true);
   assert.equal(framed.elements['open-ar-page'].hidden, false);
   assert.equal(framed.activations(), 0, 'Never launch AR inside Hark iframe');
@@ -82,6 +83,7 @@ function setup({android = true, framed = false, rejects = false} = {}) {
     assert.equal(ios.elements['open-ar-page'].hidden, true);
     assert.equal(ios.elements['android-help'].hidden, true);
     assert.equal(ios.links[0].target, '', 'iPhone navigation is unchanged');
+    assert.equal(ios.elements['avatar-viewer'].attributes.src, undefined, 'iPhone model URL is unchanged');
     assert.match(ios.elements['ar-message'].textContent, /ARを開いています/);
   }
   console.log('PASS: Android iframe escape, timeout/retry, rejection, focus, native app return, WebXR, unsupported device; iPhone unchanged.');
