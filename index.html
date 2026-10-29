@@ -9,9 +9,9 @@
   <link rel="icon" type="image/png" href="./dcc-icon-64.png">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="preload" as="image" href="./avatar-ar-preview.png">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=android-ar-20261029">
   <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.4.0/dist/model-viewer.min.js"></script>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=android-ar-20261029"></script>
 </head>
 <body>
   <div class="page-shell">
@@ -38,12 +38,24 @@
           </div>
 
           <div class="cta-group">
+            <a id="open-ar-page" class="primary-button" href="https://kqede0113.github.io/ar-card/?from=festival" target="_blank" rel="noopener noreferrer" hidden>
+              <span>ARページを開いて続ける</span><span class="button-arrow" aria-hidden="true">↗</span>
+            </a>
             <button id="launch-ar" class="primary-button" type="button" disabled aria-describedby="ar-message">
               <span class="button-icon" aria-hidden="true">⌗</span>
               <span id="launch-label">ARを準備しています</span>
               <span class="button-arrow" aria-hidden="true">↗</span>
             </button>
             <p id="ar-message" class="ar-message" role="status" aria-live="polite">3Dモデルを読み込んでいます…</p>
+            <details id="android-help" class="ar-help" hidden>
+              <summary>ARが開かないとき</summary>
+              <ul>
+                <li>InstagramやLINEの中で開いている場合は、メニューからChromeで開き直してください。</li>
+                <li>Google Playで「Google Play 開発者サービス（AR）」とGoogleアプリを確認し、更新があれば更新してください。</li>
+                <li>カメラの確認画面が出た場合は、カメラの利用を許可してください。</li>
+                <li>AR非対応の機種でも、この画面で3Dモデルを回して楽しめます。</li>
+              </ul>
+            </details>
           </div>
         </div>
 
