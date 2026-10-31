@@ -1,0 +1,46 @@
+{
+  "source": "https://kqede0113.github.io/ar-card/gallery/",
+  "updated": "2026-10-31",
+  "works": [
+    {
+      "id": "deer",
+      "name": "鹿のアクセサリー置き",
+      "price": 400
+    },
+    {
+      "id": "monkey",
+      "name": "サルのキーフック",
+      "price": 400
+    },
+    {
+      "id": "penguin",
+      "name": "ペンギン本立て",
+      "price": 500
+    },
+    {
+      "id": "owl",
+      "name": "ふくろうペン立て",
+      "price": 500
+    },
+    {
+      "id": "dog",
+      "name": "ワンちゃんハンガー",
+      "price": 300
+    },
+    {
+      "id": "cat",
+      "name": "猫箸置き",
+      "price": 100
+    },
+    {
+      "id": "lizard",
+      "name": "トカゲ",
+      "price": 200
+    },
+    {
+      "id": "dragon",
+      "name": "ドラゴン",
+      "price": 500
+    }
+  ]
+}
