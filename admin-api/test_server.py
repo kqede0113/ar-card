@@ -41,7 +41,8 @@ with tempfile.TemporaryDirectory() as directory:
     try:
         assert call('/api/health')[0] == 200
         original = call('/api/works')[1]
-        assert len(original) == 7
+        assert len(original) == 8
+        assert next(work for work in original if work['id'] == 'dragon')['price'] == 500
         payload = {'price': 432, 'description': '<test> plain text\nSecond line', 'soldOut': True, 'version': 0}
         assert call('/api/works/deer', 'PATCH', payload)[0] == 401
         assert call('/api/login', 'POST', {'password': 'wrong'})[0] == 401

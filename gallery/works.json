@@ -49,5 +49,13 @@
     "descriptionSource": null,
     "price": 200,
     "soldOut": false
+  },
+  {
+    "id": "dragon",
+    "name": "ドラゴン",
+    "description": "翼を広げたドラゴンの置物です。角や翼、くるんとしたしっぽまで、360°から眺められます。",
+    "descriptionSource": null,
+    "price": 500,
+    "soldOut": false
   }
 ]
