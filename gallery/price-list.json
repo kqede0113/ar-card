@@ -5,12 +5,12 @@
     {
       "id": "deer",
       "name": "鹿のアクセサリー置き",
-      "price": 400
+      "price": 300
     },
     {
       "id": "monkey",
       "name": "サルのキーフック",
-      "price": 400
+      "price": 300
     },
     {
       "id": "penguin",
@@ -20,7 +20,7 @@
     {
       "id": "owl",
       "name": "ふくろうペン立て",
-      "price": 500
+      "price": 400
     },
     {
       "id": "dog",
